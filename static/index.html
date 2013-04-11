@@ -1,0 +1,182 @@
+<html>
+    <head>
+        <title>KineticJS test</title>
+        <style type="text/css">
+        body {
+            margin: 0;
+        }
+        </style>
+    </head>
+    <body>
+        <div id="container"></div>
+        <div style="z-index: 999; position: absolute; right: 0; top: 0; margin-right: 5px; margin-top: 5px;">
+            <form action="/api/getRandomPath" method="get" accept-charset="utf-8" id="getPathForm" style="text-align: center;">
+                <p><input type="submit" value="Random Map" /></p>
+                <p><input type="submit" value="Clear and set up custom cities" id="customizeCities" /></p>
+            </form>
+        </div>
+        <script src="/js/jquery-1.9.1.min.js"></script>
+        <script src="/js/jquery.ba-resize.min.js"></script>
+
+        <script src="/js/kinetic-v4.4.1.min.js"></script>
+
+        <script type="text/javascript">
+            var customCities = false;
+            var customCitiesSubmit = false;
+            var cities_stack = [];
+
+            var stage = new Kinetic.Stage({
+                container: 'container',
+                width: document.width,
+                height: document.height
+            });
+
+            var layer = new Kinetic.Layer();
+            var layerDots = new Kinetic.Layer();
+            var layerLines = new Kinetic.Layer();
+            var messageLayer = new Kinetic.Layer();
+
+
+            var rect = new Kinetic.Rect({
+                x: 0,
+                y: 0,
+                width: stage.getWidth(),
+                height: stage.getHeight()
+            });
+            layer.add(rect);
+            stage.add(layer);
+            stage.add(layerLines);
+            stage.add(layerDots);
+            stage.add(messageLayer);
+
+            function writeMessage(messageLayer, message) {
+                var context = messageLayer.getContext();
+                messageLayer.clear();
+                context.font = '18pt Calibri';
+                context.fillStyle = 'black';
+                context.fillText(message, 10, 25);
+            }
+
+            function drawDot(dotpos) {
+                var dot = new Kinetic.Circle({
+                    x: dotpos.x,
+                    y: dotpos.y,
+                    radius: 5,
+                    fill: 'blue',
+                    stroke: 'yellow',
+                    strokeWidth: 2
+                });
+                layerDots.add(dot);
+                layerDots.draw(dot);
+            }
+
+            function drawLine(dot1, dot2) {
+                var line = new Kinetic.Line({
+                    points: [dot1.x, dot1.y, dot2.x, dot2.y],
+                    stroke: 'green',
+                    strokeWidth: 2,
+                    lineJoin: 'round',
+                    /*
+                     * line segments with a length of 33px
+                     * with a gap of 10px
+                     */
+                    dashArray: [33, 10]
+                });
+                layerLines.add(line);
+                layerLines.draw(line);
+            }
+
+            function purgeCanvas() {
+                layerLines.removeChildren();
+                layerLines.clear();
+                layerDots.removeChildren();
+                layerDots.clear();
+            }
+
+            function drawOptimalPath(wholeMap) {
+                purgeCanvas();
+                for (var dot in wholeMap.coords) {
+                    //console.log('Drawing', wholeMap.coords[dot]);
+                    drawDot(wholeMap.coords[dot]);
+                }
+                for (var i = 0, pathLen = wholeMap.optimal_path.path.length; i < pathLen - 1; i++) {
+                    //console.log('Drawing line from', wholeMap.coords[wholeMap.optimal_path.path[i]], 'to', wholeMap.coords[wholeMap.optimal_path.path[i+1]]);
+                    drawLine(wholeMap.coords[wholeMap.optimal_path.path[i]], wholeMap.coords[wholeMap.optimal_path.path[i+1]]);
+                }
+            }
+
+            // ajust canvas to window size
+            $(document).resize(function(obj,w,h){stage.setSize(w,h)});
+
+            /*
+
+            drawDot({
+                'x': 10,
+                'y': 20
+            });
+
+            drawDot({
+                'x': 30,
+                'y': 50
+            });
+            
+            drawLine({
+                'x': 10,
+                'y': 20
+            },{
+                'x': 30,
+                'y': 50
+            });
+
+            */
+
+            $('#getPathForm').submit(function(e){
+                e.preventDefault();
+                var custom_cities = '';
+                console.log(customCitiesSubmit);
+                if (customCitiesSubmit) {
+                    while (cities_stack.length > 0) {
+                        var c = cities_stack.shift();
+                        custom_cities += '&coordsX=' + c.x + '&coordsY=' + c.y;
+                    }
+                }
+                var xhr = $.ajax({
+                    'url': '/api/getRandomPath?x=' + $(document).width() + '&y=' + $(document).height() + ( (!customCitiesSubmit) ? '&cities_amount=10' : custom_cities ),
+                });
+                xhr.done(function(response) {
+                    //console.log(response);
+                    drawOptimalPath(response);
+                    // body...
+                });
+                customCitiesSubmit = false;
+            });
+
+            stage.on('mousemove', function() {
+                        var mousePos = stage.getMousePosition();
+                        var x = mousePos.x;
+                        var y = mousePos.y;
+                        writeMessage(messageLayer, 'x: ' + x + ', y: ' + y);
+            });
+            stage.on('click', function() {
+                if (customCities) {
+                    var mousePos = stage.getMousePosition();
+                    drawDot(mousePos);
+                    cities_stack.push(mousePos);
+                }
+            });
+            $('#customizeCities').bind('click', function(e) {
+                    customCities = !customCities;
+                    if (customCities) {
+                        purgeCanvas();
+                        cities_stack = [];
+                        $(this).val('Calculate an optimal route.');
+                    } else {
+                        customCitiesSubmit = true;
+                        $(this).val('Clear and set up custom cities');
+                        $($(this).parent()).submit();
+                    }
+                    e.preventDefault();
+            })
+        </script>
+    </body>
+</html>

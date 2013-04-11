@@ -1,0 +1,48 @@
+project_metadata:
+  package: web_tsp
+
+global:
+  engine.logging.on: true
+
+controllers:
+  '':
+    controller: !!python/name:web_tsp.controller.Root
+    /:
+      tools.sessions.on: true
+      tools.staticdir.root: /home/wk/private/tsp/web_tsp/static
+      tools.staticfile.root: /home/wk/private/tsp/web_tsp/static
+    /css:
+      tools.sessions.on: false
+      tools.staticdir.on: true
+      tools.staticdir.dir: css
+    /js:
+      tools.sessions.on: false
+      tools.staticdir.on: true
+      tools.staticdir.dir: js
+    /img:
+      tools.sessions.on: false
+      tools.staticdir.on: true
+      tools.staticdir.dir: img
+    /favicon.ico:
+      tools.sessions.on: false
+      tools.staticfile.on: true
+      tools.staticfile.filename: favicon.ico
+    /index.html:
+      tools.sessions.on: false
+      tools.staticfile.on: true
+      tools.staticfile.filename: index.html
+  /api:
+    controller: !!python/name:web_tsp.rest_controller.rest_controller
+    /:
+      request.dispatch: !!python/name:web_tsp.rest_controller.rest_controller
+
+
+
+jinja2:
+  loader: !!python/object:jinja2.loaders.FileSystemLoader
+          encoding: utf-8
+          searchpath: [/home/wk/private/tsp/web_tsp/src/web_tsp/templates]
+  bytecode_cache: !!python/object:jinja2.bccache.FileSystemBytecodeCache {directory: /home/wk/private/tsp/web_tsp/.cache,
+                                                                          pattern: __jinja2_%s.cache}
+  auto_reload: true
+  use_webassets: false
