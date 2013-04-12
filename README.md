@@ -16,9 +16,11 @@ How to run it
 You need python3 interpreter, blueberrypy package (for python3) from a repo on my bitbucket acc and
 routes package (for python3) from this acc.
 Navigate to dir with project and run app with:
-```$ cd web-tsp
-$ blueberrypy serve -b 0.0.0.0:8080```
-This will force app to listen to port 8080, so just navigate to http://localhost:8080/index.html (replace
+```
+$ cd web-tsp
+$ blueberrypy serve -b 0.0.0.0:8080
+```
+This will force app to listen to port 8080, so just navigate to ```http://localhost:8080/index.html``` (replace
 ```localhost``` with your IP or whatever if you need to)
 
 Have fun!
